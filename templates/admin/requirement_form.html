@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, field %}
+{% set section = "requirements" %}
+{% block title %}{{ "Редактирование " ~ req.code if req else "Новое требование" }}{% endblock %}
+{% block crumbs %}<a href="{{ url_for('requirements.list_requirements') }}">Требования</a> / {{ req.code if req else "новое" }}{% endblock %}
+{% block heading %}{{ "Редактирование " ~ req.code if req else "Новое требование" }}{% endblock %}
+
+{% block content %}
+<form method="post" class="card" novalidate style="max-width: 920px">
+  {{ form.hidden_tag() }}
+  <div class="card-head"><h2>Карточка требования</h2></div>
+  <div class="card-body">
+    <div class="form-grid">
+      {{ field(form.project_id) }}
+      {{ field(form.code, hint="Формат: ТИП-001, например СИС-012") }}
+      {{ field(form.title, "full") }}
+      {{ field(form.type_id) }}
+      {{ field(form.category_id) }}
+      {{ field(form.priority) }}
+      {{ field(form.status) }}
+      {{ field(form.source, "full", hint="Документ, раздел ТЗ, норматив или заинтересованное лицо") }}
+      {{ field(form.description, "full") }}
+    </div>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{{ icon("check") }} Сохранить</button>
+    <a class="btn" href="{{ url_for('requirements.view_requirement', req_id=req.id) if req else url_for('requirements.list_requirements') }}">Отмена</a>
+  </div>
+</form>
+{% endblock %}

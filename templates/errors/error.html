@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block body %}
+<div class="error-page">
+  <div class="error-box">
+    <div class="error-code">{{ code }}</div>
+    <h1>{{ title }}</h1>
+    <p>{{ message }}</p>
+    <div style="display:flex;gap:8px;justify-content:center">
+      {% if current_user.is_authenticated and current_user.is_admin %}
+        <a class="btn btn-primary" href="{{ url_for('dashboard.index') }}">Вернуться в панель</a>
+      {% elif current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('auth.logout') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-primary" type="submit">Войти под другой учётной записью</button>
+        </form>
+      {% else %}
+        <a class="btn btn-primary" href="{{ url_for('auth.login') }}">Перейти ко входу</a>
+      {% endif %}
+      <a class="btn" href="javascript:history.back()">Назад</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

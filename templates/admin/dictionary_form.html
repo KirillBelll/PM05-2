@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, field %}
+{% set section = "dictionaries" %}
+{% block title %}{{ title }}{% endblock %}
+{% block crumbs %}<a href="{{ url_for('dictionaries.index') }}">Справочники</a> / {{ title|lower }}{% endblock %}
+{% block heading %}{{ obj.name if obj and obj.name else title }}{% endblock %}
+
+{% block content %}
+<form method="post" class="card" novalidate style="max-width: 640px">
+  {{ form.hidden_tag() }}
+  <div class="card-head"><h2>{{ title }}</h2></div>
+  <div class="card-body">
+    <div class="form-grid">
+      {% for f in form if f.widget.input_type != "hidden" %}
+        {% if f.name == "color" %}
+          <div class="field {{ 'has-error' if f.errors }}">
+            {{ f.label }}{{ f(class="input", type="color") }}
+            {% for e in f.errors %}<span class="error">{{ e }}</span>{% endfor %}
+          </div>
+        {% else %}
+          {{ field(f, "full" if f.name in ("name", "description") else "") }}
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{{ icon("check") }} Сохранить</button>
+    <a class="btn" href="{{ url_for('dictionaries.index') }}">Отмена</a>
+  </div>
+</form>
+{% endblock %}

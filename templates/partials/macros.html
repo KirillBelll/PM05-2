@@ -1,0 +1,62 @@
+{% macro icon(name, cls="icon") -%}
+<svg class="{{ cls }}" aria-hidden="true"><use href="#i-{{ name }}"/></svg>
+{%- endmacro %}
+
+{% macro field(f, cls="", hint=None) -%}
+<div class="field {{ cls }} {{ 'has-error' if f.errors }}">
+  {{ f.label }}
+  {% if f.type == "SelectField" %}
+    {{ f(class="select") }}
+  {% elif f.type == "TextAreaField" %}
+    {{ f(class="input", rows=5) }}
+  {% else %}
+    {{ f(class="input") }}
+  {% endif %}
+  {% if hint %}<span class="hint">{{ hint }}</span>{% endif %}
+  {% for e in f.errors %}<span class="error">{{ e }}</span>{% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro status_badge(code, label) -%}
+<span class="badge b-{{ code }}"><span class="dot"></span>{{ label }}</span>
+{%- endmacro %}
+
+{% macro priority(code, label) -%}
+<span class="prio p-{{ code }}">{{ label }}</span>
+{%- endmacro %}
+
+{% macro pager(pagination, endpoint, args) -%}
+{% if pagination.total %}
+<div class="pager">
+  <span>Показано {{ pagination.first }}–{{ pagination.last }} из {{ pagination.total }}</span>
+  {% if pagination.pages > 1 %}
+  <nav class="pages" aria-label="Страницы">
+    {% if pagination.has_prev %}
+      <a href="{{ url_for(endpoint, page=pagination.prev_num, **args) }}" aria-label="Предыдущая">‹</a>
+    {% else %}<span class="disabled">‹</span>{% endif %}
+    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+      {% if p %}
+        {% if p == pagination.page %}<span class="current">{{ p }}</span>
+        {% else %}<a href="{{ url_for(endpoint, page=p, **args) }}">{{ p }}</a>{% endif %}
+      {% else %}<span class="disabled">…</span>{% endif %}
+    {% endfor %}
+    {% if pagination.has_next %}
+      <a href="{{ url_for(endpoint, page=pagination.next_num, **args) }}" aria-label="Следующая">›</a>
+    {% else %}<span class="disabled">›</span>{% endif %}
+  </nav>
+  {% endif %}
+</div>
+{% endif %}
+{%- endmacro %}
+
+{% macro delete_button(action, form, text, label="Удалить", small=True, extra=None) -%}
+<form method="post" action="{{ action }}" data-confirm="{{ text }}">
+  {{ form.hidden_tag() }}
+  {% if extra %}{% for k, v in extra.items() %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}{% endif %}
+  {% if small %}
+    <button type="submit" class="btn btn-icon danger" title="{{ label }}" aria-label="{{ label }}">{{ icon("trash") }}</button>
+  {% else %}
+    <button type="submit" class="btn btn-danger">{{ icon("trash") }} {{ label }}</button>
+  {% endif %}
+</form>
+{%- endmacro %}

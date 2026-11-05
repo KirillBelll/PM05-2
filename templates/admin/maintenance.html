@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, delete_button %}
+{% set section = "maintenance" %}
+{% block title %}Резервные копии{% endblock %}
+{% block crumbs %}Контроль{% endblock %}
+{% block heading %}Резервное копирование и целостность{% endblock %}
+
+{% block content %}
+<section class="grid grid-main">
+  <div class="card">
+    <div class="card-head"><h2>Резервные копии</h2><span class="muted">хранятся в папке backups/</span></div>
+    <form method="post" action="{{ url_for('maintenance.make_backup') }}" class="filters">
+      {{ form.hidden_tag() }}
+      <div class="field" style="flex:1"><label for="comment">Комментарий к копии</label>{{ form.comment(class="input", placeholder="Например: перед изменением справочников") }}</div>
+      <button class="btn btn-primary" type="submit">{{ icon("db") }} Создать копию</button>
+    </form>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Файл</th><th>Создана</th><th>Автор</th><th>Содержимое</th><th class="right">Размер</th><th></th></tr></thead>
+        <tbody>
+        {% for b in backups %}
+          <tr>
+            <td><span class="mono" style="font-size:12px">{{ b.filename }}</span>{% if b.comment %}<div class="sub">{{ b.comment }}</div>{% endif %}</td>
+            <td class="nowrap">{{ b.created_at|dt }}</td>
+            <td class="mono">{{ b.author.login if b.author else "—" }}</td>
+            <td class="nowrap">{{ b.tables_cnt }} табл., {{ b.rows_cnt }} строк</td>
+            <td class="right nowrap">{{ b.size_bytes|filesize }}</td>
+            <td class="actions"><div class="row-actions">
+              <a class="btn btn-icon" href="{{ url_for('maintenance.download_backup', backup_id=b.id) }}" title="Скачать" aria-label="Скачать">{{ icon("download") }}</a>
+              {{ delete_button(url_for('maintenance.delete_backup', backup_id=b.id), delete_form, "Удалить файл " ~ b.filename ~ "?") }}
+            </div></td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6"><div class="empty"><strong>Копий пока нет</strong>Создайте первую резервную копию</div></td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h2>Проверка целостности</h2>
+      <form method="post" action="{{ url_for('maintenance.check') }}">
+        {{ delete_form.hidden_tag() }}
+        <button class="btn btn-sm" type="submit">{{ icon("shield") }} Проверить</button>
+      </form>
+    </div>
+    {% if checks is not none %}
+      <div class="card-body" style="padding-bottom:0">
+        {% if problems %}<div class="flash warning">Найдено замечаний: {{ problems }}</div>
+        {% else %}<div class="flash success">Нарушений целостности не обнаружено</div>{% endif %}
+      </div>
+      <ul class="check-list">
+        {% for c in checks %}
+        <li>
+          <div class="check-row">
+            <span class="state {{ 'bad' if c.count else 'ok' }}">{{ icon("alert" if c.count else "check") }}</span>
+            <span>{{ c.title }}</span>
+            <span class="muted" style="margin-left:auto">{{ c.count }}</span>
+          </div>
+          {% if c.rows %}<ul class="check-items">{% for i in c.rows %}<li>{{ i }}</li>{% endfor %}</ul>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="card-body muted">
+        Проверка находит связи между разными проектами, требования без категории и без связи с источником,
+        проекты без руководителя и заблокированных пользователей в составе проектов.
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

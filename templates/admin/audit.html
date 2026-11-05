@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, pager %}
+{% set section = "audit" %}
+{% block title %}Журнал действий{% endblock %}
+{% block crumbs %}Контроль{% endblock %}
+{% block heading %}Журнал действий{% endblock %}
+
+{% block content %}
+<div class="card">
+  <form class="filters" method="get" data-autosubmit>
+    <div class="field">
+      <label for="user">Пользователь</label>
+      <select id="user" name="user" class="select">
+        <option value="">Все</option>
+        {% for u in users %}<option value="{{ u.id }}" {{ 'selected' if request.args.get('user') == u.id|string }}>{{ u.full_name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="action">Действие</label>
+      <select id="action" name="action" class="select">
+        <option value="">Все</option>
+        {% for code, label in actions.items() %}<option value="{{ code }}" {{ 'selected' if request.args.get('action') == code }}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="entity">Объект</label>
+      <select id="entity" name="entity" class="select">
+        <option value="">Все</option>
+        {% for code, label in entities.items() %}<option value="{{ code }}" {{ 'selected' if request.args.get('entity') == code }}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field"><label for="from">С даты</label><input id="from" class="input" type="date" name="from" value="{{ request.args.get('from', '') }}"></div>
+    <div class="field"><label for="to">По дату</label><input id="to" class="input" type="date" name="to" value="{{ request.args.get('to', '') }}"></div>
+    <button class="btn" type="submit">Применить</button>
+    {% if args %}<a class="btn" href="{{ url_for('audit.index') }}">Сбросить</a>{% endif %}
+  </form>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Время</th><th>Пользователь</th><th>Действие</th><th>Объект</th><th>Подробности</th><th>IP-адрес</th></tr></thead>
+      <tbody>
+      {% for e in entries %}
+        <tr>
+          <td class="nowrap mono">{{ e.created_at|dt("%d.%m.%Y %H:%M:%S") }}</td>
+          <td class="nowrap">{{ e.user.full_name if e.user else "—" }}</td>
+          <td><span class="act {{ e.action }}">{{ e.action_label }}</span></td>
+          <td class="nowrap">{{ e.entity_label }}{% if e.entity_id %} <span class="muted">#{{ e.entity_id }}</span>{% endif %}</td>
+          <td style="max-width:520px">{{ e.details or "—" }}</td>
+          <td class="mono muted">{{ e.ip_address or "—" }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6"><div class="empty"><strong>Записей нет</strong>За выбранный период действий не зафиксировано</div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pager(pagination, "audit.index", args) }}
+</div>
+{% endblock %}

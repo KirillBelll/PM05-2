@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, field %}
+{% set section = "projects" %}
+{% block title %}{{ "Редактирование проекта" if project else "Новый проект" }}{% endblock %}
+{% block crumbs %}<a href="{{ url_for('projects.list_projects') }}">Проекты</a> / {{ project.code if project else "новый" }}{% endblock %}
+{% block heading %}{{ project.name if project else "Новый проект" }}{% endblock %}
+
+{% block content %}
+<form method="post" class="card" novalidate style="max-width: 860px">
+  {{ form.hidden_tag() }}
+  <div class="card-head"><h2>Параметры проекта</h2></div>
+  <div class="card-body">
+    <div class="form-grid">
+      {{ field(form.code, hint="Например: ИС-ВК-24") }}
+      {{ field(form.status) }}
+      {{ field(form.name, "full") }}
+      {{ field(form.manager_id) }}
+      <div></div>
+      {{ field(form.start_date) }}
+      {{ field(form.end_date) }}
+      {{ field(form.description, "full") }}
+    </div>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{{ icon("check") }} Сохранить</button>
+    <a class="btn" href="{{ url_for('projects.view_project', project_id=project.id) if project else url_for('projects.list_projects') }}">Отмена</a>
+  </div>
+</form>
+{% endblock %}

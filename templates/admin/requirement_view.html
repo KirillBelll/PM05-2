@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, delete_button, status_badge, priority %}
+{% set section = "requirements" %}
+{% block title %}{{ req.code }}{% endblock %}
+{% block crumbs %}<a href="{{ url_for('requirements.list_requirements', project=req.project_id) }}">Требования</a> / {{ req.project.code }} / {{ req.code }}{% endblock %}
+{% block heading %}<span class="code-chip" style="font-size:15px;vertical-align:3px">{{ req.code }}</span> {{ req.title }}{% endblock %}
+{% block actions %}
+  <a class="btn" href="{{ url_for('requirements.edit_requirement', req_id=req.id) }}">{{ icon("edit") }} Изменить</a>
+  {{ delete_button(url_for('requirements.delete_requirement', req_id=req.id), delete_form,
+     "Удалить требование " ~ req.code ~ " и все его связи?", small=False) }}
+{% endblock %}
+
+{% block content %}
+<section class="grid grid-main">
+  <div class="card">
+    <div class="card-head"><h2>Описание</h2>{{ status_badge(req.status, req.status_label) }}</div>
+    <div class="card-body">
+      <p class="prose" style="margin-top:0">{{ req.description or "Описание не заполнено." }}</p>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>Атрибуты</h2></div>
+    <div class="card-body">
+      <dl class="props" style="grid-template-columns: 110px 1fr">
+        <dt>Проект</dt><dd><a href="{{ url_for('projects.view_project', project_id=req.project_id) }}">{{ req.project.code }}</a></dd>
+        <dt>Уровень</dt><dd>{{ req.type.name }}</dd>
+        <dt>Категория</dt><dd>{% if req.category %}<span class="tag"><i style="background: {{ req.category.color }}"></i>{{ req.category.name }}</span>{% else %}—{% endif %}</dd>
+        <dt>Приоритет</dt><dd>{{ priority(req.priority, req.priority_label) }}</dd>
+        <dt>Источник</dt><dd>{{ req.source or "—" }}</dd>
+        <dt>Автор</dt><dd>{{ req.author.full_name if req.author else "—" }}</dd>
+        <dt>Создано</dt><dd>{{ req.created_at|dt }}</dd>
+        <dt>Изменено</dt><dd>{{ req.updated_at|dt }}</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="grid grid-2">
+  <div class="card">
+    <div class="card-head"><h2>↑ Вышестоящие требования</h2><span class="muted">{{ req.outgoing|length }}</span></div>
+    <ul class="link-list">
+      {% for l in req.outgoing %}
+      <li>
+        <span class="ltype">{{ l.type_label }}</span>
+        <span class="code-chip">{{ l.target.code }}</span>
+        <a class="ltitle" href="{{ url_for('requirements.view_requirement', req_id=l.target_id) }}">{{ l.target.title }}</a>
+        {{ delete_button(url_for('requirements.delete_link', link_id=l.id), delete_form,
+           "Удалить связь " ~ req.code ~ " → " ~ l.target.code ~ "?", label="Удалить связь", extra={"back": req.id}) }}
+      </li>
+      {% else %}
+      <li class="muted">Связей нет{% if req.type.level > 1 %} — требование не привязано к источнику{% endif %}</li>
+      {% endfor %}
+    </ul>
+    {% if link_form.target_id.choices %}
+    <form method="post" action="{{ url_for('requirements.add_link', req_id=req.id) }}" class="filters" style="border-top:1px solid var(--line);border-bottom:0">
+      {{ link_form.hidden_tag() }}
+      <div class="field" style="flex:1;min-width:220px"><label for="target_id">Связать с</label>{{ link_form.target_id(class="select") }}</div>
+      <div class="field"><label for="link_type">Тип связи</label>{{ link_form.link_type(class="select") }}</div>
+      <button class="btn btn-primary" type="submit">{{ icon("link") }} Связать</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>↓ Детализирующие требования</h2><span class="muted">{{ req.incoming|length }}</span></div>
+    <ul class="link-list">
+      {% for l in req.incoming %}
+      <li>
+        <span class="ltype">{{ l.type_label }}</span>
+        <span class="code-chip">{{ l.source.code }}</span>
+        <a class="ltitle" href="{{ url_for('requirements.view_requirement', req_id=l.source_id) }}">{{ l.source.title }}</a>
+        {{ status_badge(l.source.status, l.source.status_label) }}
+      </li>
+      {% else %}
+      <li class="muted">Требование ещё не детализировано</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endblock %}

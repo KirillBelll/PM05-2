@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, delete_button, status_badge %}
+{% set section = "projects" %}
+{% block title %}{{ project.code }}{% endblock %}
+{% block crumbs %}<a href="{{ url_for('projects.list_projects') }}">Проекты</a> / {{ project.code }}{% endblock %}
+{% block heading %}{{ project.name }}{% endblock %}
+{% block actions %}
+  <a class="btn" href="{{ url_for('requirements.matrix', project=project.id) }}">{{ icon("matrix") }} Матрица</a>
+  <a class="btn" href="{{ url_for('projects.edit_project', project_id=project.id) }}">{{ icon("edit") }} Изменить</a>
+  {{ delete_button(url_for('projects.delete_project', project_id=project.id), delete_form,
+     "Удалить проект " ~ project.code ~ " вместе со всеми требованиями и связями?", small=False) }}
+{% endblock %}
+
+{% block content %}
+<section class="grid grid-main">
+  <div class="card">
+    <div class="card-head"><h2>Сведения</h2>{{ status_badge(project.status, project.status_label) }}</div>
+    <div class="card-body">
+      <dl class="props">
+        <dt>Шифр</dt><dd><span class="code-chip">{{ project.code }}</span></dd>
+        <dt>Руководитель</dt><dd>{{ project.manager.full_name if project.manager else "—" }}</dd>
+        <dt>Сроки</dt><dd>{{ project.start_date|d }} — {{ project.end_date|d }}</dd>
+        <dt>Создан</dt><dd>{{ project.created_at|dt }}</dd>
+        <dt>Описание</dt><dd class="prose">{{ project.description or "—" }}</dd>
+      </dl>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>Требования</h2><a href="{{ url_for('requirements.list_requirements', project=project.id) }}">Открыть список</a></div>
+    <div class="card-body">
+      <div class="kpi-value" style="margin:0 0 12px">{{ req_total }}</div>
+      <div class="bar-list">
+        {% for code, label in REQ_STATUSES.items() %}{% set n = req_stats.get(code, 0) %}
+        <div class="bar-row" style="grid-template-columns: 140px 1fr 30px">
+          <span>{{ label }}</span>
+          <div class="bar-track"><div class="bar-fill" style="width: {{ (n * 100 / (req_total or 1))|round }}%"></div></div>
+          <span class="num">{{ n }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="card">
+  <div class="card-head"><h2>Участники и права доступа</h2><span class="muted">{{ project.members|length }} чел.</span></div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Пользователь</th><th>Роль в системе</th><th>Права в проекте</th><th>Добавлен</th><th></th></tr></thead>
+      <tbody>
+      {% for m in project.members|sort(attribute="user.full_name") %}
+        <tr>
+          <td>{{ m.user.full_name }} <span class="sub mono">{{ m.user.login }}</span></td>
+          <td>{{ m.user.role.name }}</td>
+          <td>
+            <form method="post" action="{{ url_for('projects.update_member', project_id=project.id, member_id=m.id) }}" style="display:flex;gap:6px">
+              {{ delete_form.hidden_tag() }}
+              <select name="access_level" class="select" style="height:30px" onchange="this.form.submit()" aria-label="Права доступа">
+                {% for code, label in ACCESS_LEVELS.items() %}<option value="{{ code }}" {{ 'selected' if m.access_level == code }}>{{ label }}</option>{% endfor %}
+              </select>
+            </form>
+          </td>
+          <td class="nowrap">{{ m.added_at|dt }}</td>
+          <td class="actions">
+            {{ delete_button(url_for('projects.update_member', project_id=project.id, member_id=m.id), delete_form,
+               "Исключить " ~ m.user.full_name ~ " из проекта?", label="Исключить", extra={"action": "delete"}) }}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5"><div class="empty">В проекте пока нет участников</div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if member_form.user_id.choices %}
+  <form method="post" action="{{ url_for('projects.add_member', project_id=project.id) }}" class="filters" style="border-top:1px solid var(--line);border-bottom:0">
+    {{ member_form.hidden_tag() }}
+    <div class="field"><label for="user_id">Добавить участника</label>{{ member_form.user_id(class="select", style="min-width:280px") }}</div>
+    <div class="field"><label for="access_level">Права</label>{{ member_form.access_level(class="select") }}</div>
+    <button class="btn btn-primary" type="submit">{{ icon("plus") }} Добавить</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

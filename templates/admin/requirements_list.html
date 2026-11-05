@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, pager, delete_button, status_badge, priority %}
+{% set section = "requirements" %}
+{% block title %}Требования{% endblock %}
+{% block crumbs %}Данные{% endblock %}
+{% block heading %}Реестр требований{% endblock %}
+{% block actions %}
+  <a class="btn btn-primary" href="{{ url_for('requirements.create_requirement', project=request.args.get('project')) }}">{{ icon("plus") }} Новое требование</a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <form class="filters" method="get" data-autosubmit>
+    <div class="field">
+      <label for="q">Поиск</label>
+      <input id="q" class="input input-search" type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Код или текст требования">
+    </div>
+    <div class="field">
+      <label for="project">Проект</label>
+      <select id="project" name="project" class="select">
+        <option value="">Все проекты</option>
+        {% for p in projects %}<option value="{{ p.id }}" {{ 'selected' if request.args.get('project') == p.id|string }}>{{ p.code }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="type">Уровень</label>
+      <select id="type" name="type" class="select">
+        <option value="">Все</option>
+        {% for t in types %}<option value="{{ t.id }}" {{ 'selected' if request.args.get('type') == t.id|string }}>{{ t.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="category">Категория</label>
+      <select id="category" name="category" class="select">
+        <option value="">Все</option>
+        {% for c in categories %}<option value="{{ c.id }}" {{ 'selected' if request.args.get('category') == c.id|string }}>{{ c.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="status">Статус</label>
+      <select id="status" name="status" class="select">
+        <option value="">Все</option>
+        {% for code, label in statuses.items() %}<option value="{{ code }}" {{ 'selected' if request.args.get('status') == code }}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="priority">Приоритет</label>
+      <select id="priority" name="priority" class="select">
+        <option value="">Все</option>
+        {% for code, label in priorities.items() %}<option value="{{ code }}" {{ 'selected' if request.args.get('priority') == code }}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="sort">Сортировка</label>
+      <select id="sort" name="sort" class="select">
+        <option value="code" {{ 'selected' if sort == 'code' }}>По коду</option>
+        <option value="priority" {{ 'selected' if sort == 'priority' }}>По приоритету</option>
+        <option value="-updated" {{ 'selected' if sort == '-updated' }}>Недавно изменённые</option>
+      </select>
+    </div>
+    {% if args %}<a class="btn" href="{{ url_for('requirements.list_requirements') }}">Сбросить</a>{% endif %}
+  </form>
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Код</th><th>Требование</th><th>Уровень</th><th>Категория</th><th>Приоритет</th><th>Статус</th><th class="right">Связи</th><th></th></tr></thead>
+      <tbody>
+      {% for r in items %}
+        <tr>
+          <td><span class="code-chip">{{ r.code }}</span></td>
+          <td class="title-cell">
+            <a href="{{ url_for('requirements.view_requirement', req_id=r.id) }}">{{ r.title }}</a>
+            <div class="sub">{{ r.project.code }} · изменено {{ r.updated_at|dt }}</div>
+          </td>
+          <td class="nowrap">{{ r.type.name }}</td>
+          <td>{% if r.category %}<span class="tag"><i style="background: {{ r.category.color }}"></i>{{ r.category.name }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+          <td>{{ priority(r.priority, r.priority_label) }}</td>
+          <td>{{ status_badge(r.status, r.status_label) }}</td>
+          <td class="right nowrap">
+            <span title="Ссылается на вышестоящие">↑{{ r.outgoing|length }}</span>
+            <span class="muted" title="Детализировано в нижестоящих">↓{{ r.incoming|length }}</span>
+          </td>
+          <td class="actions">
+            <div class="row-actions">
+              <a class="btn btn-icon" href="{{ url_for('requirements.edit_requirement', req_id=r.id) }}" title="Изменить" aria-label="Изменить">{{ icon("edit") }}</a>
+              {{ delete_button(url_for('requirements.delete_requirement', req_id=r.id), delete_form,
+                 "Удалить требование " ~ r.code ~ "? Связи трассировки тоже будут удалены.", extra={"back": "list"}) }}
+            </div>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="8"><div class="empty"><strong>Требования не найдены</strong>Измените фильтры или добавьте новое требование</div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pager(pagination, "requirements.list_requirements", args) }}
+</div>
+{% endblock %}

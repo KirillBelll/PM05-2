@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, status_badge %}
+{% set section = "dashboard" %}
+{% block title %}Сводка{% endblock %}
+{% block crumbs %}Панель администратора{% endblock %}
+{% block heading %}Сводка{% endblock %}
+{% block actions %}
+  <a class="btn" href="{{ url_for('requirements.matrix') }}">{{ icon("matrix") }} Матрица</a>
+  <a class="btn btn-primary" href="{{ url_for('requirements.create_requirement') }}">{{ icon("plus") }} Требование</a>
+{% endblock %}
+
+{% block content %}
+<section class="kpis">
+  <div class="card kpi">
+    <div class="kpi-label">{{ icon("folder") }} Проекты</div>
+    <div class="kpi-value">{{ stats.projects }}</div>
+    <div class="kpi-note">в работе: {{ stats.projects_active }}</div>
+  </div>
+  <div class="card kpi">
+    <div class="kpi-label">{{ icon("list") }} Требования</div>
+    <div class="kpi-value">{{ stats.requirements }}</div>
+    <div class="kpi-note">связей трассировки: {{ stats.links }}</div>
+  </div>
+  <div class="card kpi">
+    <div class="kpi-label">{{ icon("trace") }} Охват трассировкой</div>
+    <div class="kpi-value">{{ stats.coverage }}%</div>
+    <div class="meter"><span style="width: {{ stats.coverage }}%"></span></div>
+  </div>
+  <div class="card kpi">
+    <div class="kpi-label">{{ icon("users") }} Пользователи</div>
+    <div class="kpi-value">{{ stats.users }}</div>
+    <div class="kpi-note">активных: {{ stats.users_active }}</div>
+  </div>
+</section>
+
+<section class="grid grid-main">
+  <div class="card">
+    <div class="card-head"><h2>Проекты</h2><a href="{{ url_for('projects.list_projects') }}">Все проекты</a></div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Шифр</th><th>Наименование</th><th>Руководитель</th><th>Статус</th><th class="right">Требований</th></tr></thead>
+        <tbody>
+        {% for p, cnt in projects %}
+          <tr>
+            <td><span class="code-chip">{{ p.code }}</span></td>
+            <td class="title-cell"><a href="{{ url_for('projects.view_project', project_id=p.id) }}">{{ p.name }}</a></td>
+            <td>{{ p.manager.full_name if p.manager else "—" }}</td>
+            <td>{{ status_badge(p.status, p.status_label) }}</td>
+            <td class="right">{{ cnt }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="5"><div class="empty">Проектов пока нет</div></td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Требования по статусам</h2></div>
+    <div class="card-body">
+      {% set max_s = (by_status | map(attribute="count") | max) or 1 %}
+      <div class="bar-list">
+        {% for s in by_status %}
+        <div class="bar-row">
+          <span>{{ status_badge(s.code, s.label) }}</span>
+          <div class="bar-track"><div class="bar-fill" style="width: {{ (s.count * 100 / max_s)|round }}%"></div></div>
+          <span class="num">{{ s.count }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="grid grid-3">
+  <div class="card">
+    <div class="card-head"><h2>По категориям</h2><a href="{{ url_for('dictionaries.index') }}">Справочник</a></div>
+    <div class="card-body">
+      {% set max_c = (by_category | map(attribute=2) | max) or 1 %}
+      <div class="bar-list">
+        {% for name, color, cnt in by_category %}
+        <div class="bar-row">
+          <span class="tag"><i style="background: {{ color }}"></i>{{ name }}</span>
+          <div class="bar-track"><div class="bar-fill" style="width: {{ (cnt * 100 / max_c)|round }}%; background: {{ color }}"></div></div>
+          <span class="num">{{ cnt }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>По уровням</h2></div>
+    <div class="card-body">
+      {% set max_t = (by_type | map(attribute=2) | max) or 1 %}
+      <div class="bar-list">
+        {% for code, name, cnt in by_type %}
+        <div class="bar-row">
+          <span><span class="code-chip">{{ code }}</span> {{ name }}</span>
+          <div class="bar-track"><div class="bar-fill" style="width: {{ (cnt * 100 / max_t)|round }}%"></div></div>
+          <span class="num">{{ cnt }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Последние действия</h2><a href="{{ url_for('audit.index') }}">Журнал</a></div>
+    <ul class="feed">
+      {% for e in recent %}
+      <li>
+        <span class="mark a-{{ e.action }}"></span>
+        <div>
+          <div class="what">{{ e.action_label }} · {{ e.entity_label }}</div>
+          <div class="meta">{{ e.user.login if e.user else "система" }} · {{ e.created_at|dt }}</div>
+        </div>
+      </li>
+      {% else %}
+      <li><div class="muted">Записей нет</div></li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endblock %}

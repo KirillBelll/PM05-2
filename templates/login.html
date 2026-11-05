@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, field %}
+{% block title %}Вход{% endblock %}
+{% block body %}
+<div class="auth">
+  <section class="auth-aside">
+    <div class="brand" style="padding:0;border:0">
+      <div class="brand-mark">{{ icon("trace") }}</div>
+      <div>
+        <div class="brand-name">ТрассаТреб</div>
+        <div class="brand-sub">Инженерные требования и трассируемость</div>
+      </div>
+    </div>
+    <div>
+      <h2>Панель администратора</h2>
+      <p>Справочники требований, проекты и права доступа участников, журнал действий и резервные копии базы данных.</p>
+    </div>
+    <div class="foot">Доступ только для сотрудников с ролью «Администратор».</div>
+  </section>
+  <section class="auth-panel">
+    <form method="post" class="auth-form" novalidate>
+      {{ form.hidden_tag() }}
+      <div>
+        <h1>Вход в систему</h1>
+        <div class="muted">Укажите логин и пароль учётной записи</div>
+      </div>
+      {% include "partials/flashes.html" %}
+      {{ field(form.login) }}
+      {{ field(form.password) }}
+      <label class="check">{{ form.remember() }} {{ form.remember.label.text }}</label>
+      <button type="submit" class="btn btn-primary">Войти</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

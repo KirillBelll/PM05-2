@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon %}
+{% set section = "matrix" %}
+{% block title %}Матрица трассировки{% endblock %}
+{% block crumbs %}Данные{% endblock %}
+{% block heading %}Матрица трассируемости{% endblock %}
+
+{% block content %}
+<div class="card">
+  <form class="filters" method="get" data-autosubmit>
+    <div class="field">
+      <label for="project">Проект</label>
+      <select id="project" name="project" class="select" style="min-width:360px">
+        {% for p in projects %}<option value="{{ p.id }}" {{ 'selected' if project and project.id == p.id }}>{{ p.code }} — {{ p.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="legend" style="margin-left:auto;padding-bottom:8px">
+      <span><i class="m1"></i> прямая связь</span>
+      <span><i class="m2"></i> через промежуточное требование</span>
+      <span><i class="m3"></i> требование без детализации</span>
+    </div>
+  </form>
+
+  {% if project and rows and cols %}
+  <div class="matrix-wrap">
+    <table class="matrix">
+      <thead>
+        <tr>
+          <th class="corner">Исходные требования ↓ / производные →</th>
+          {% for c in cols %}<th title="{{ c.code }} — {{ c.title }}"><div class="vert">{{ c.code }}</div></th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr class="{{ 'gap' if r in uncovered }}">
+          <th title="{{ r.title }}"><span class="code-chip">{{ r.code }}</span> {{ r.title }}</th>
+          {% for c in cols %}{% set v = cells.get((r.id, c.id)) %}
+            {% if v == "indirect" %}<td class="ind" title="{{ r.code }} ⇢ {{ c.code }}"><span class="m"></span></td>
+            {% elif v %}<td class="hit" title="{{ c.code }} — {{ LINK_TYPES[v] }} {{ r.code }}"><span class="m"></span></td>
+            {% else %}<td></td>{% endif %}
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="pager">
+    <span>Исходных требований: {{ rows|length }} · производных: {{ cols|length }}</span>
+    <span>{% if uncovered %}Без детализации: {{ uncovered|map(attribute="code")|join(", ") }}{% else %}Все исходные требования детализированы{% endif %}</span>
+  </div>
+  {% else %}
+  <div class="empty"><strong>Недостаточно данных</strong>В проекте нет требований разных уровней для построения матрицы</div>
+  {% endif %}
+</div>
+{% endblock %}

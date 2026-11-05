@@ -1,0 +1,81 @@
+{% from "partials/macros.html" import icon %}
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Панель администратора{% endblock %} · ТрассаТреб</title>
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+{% include "partials/icons.html" %}
+{% block body %}
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">{{ icon("trace") }}</div>
+      <div>
+        <div class="brand-name">ТрассаТреб</div>
+        <div class="brand-sub">Панель администратора</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="{{ url_for('dashboard.index') }}" class="{{ 'active' if section == 'dashboard' }}">{{ icon("dashboard") }} Сводка</a>
+      <div class="nav-group">Данные</div>
+      <a href="{{ url_for('projects.list_projects') }}" class="{{ 'active' if section == 'projects' }}">{{ icon("folder") }} Проекты</a>
+      <a href="{{ url_for('requirements.list_requirements') }}" class="{{ 'active' if section == 'requirements' }}">{{ icon("list") }} Требования</a>
+      <a href="{{ url_for('requirements.matrix') }}" class="{{ 'active' if section == 'matrix' }}">{{ icon("matrix") }} Матрица трассировки</a>
+      <div class="nav-group">Настройка</div>
+      <a href="{{ url_for('dictionaries.index') }}" class="{{ 'active' if section == 'dictionaries' }}">{{ icon("book") }} Справочники</a>
+      <a href="{{ url_for('users.list_users') }}" class="{{ 'active' if section == 'users' }}">{{ icon("users") }} Пользователи</a>
+      <div class="nav-group">Контроль</div>
+      <a href="{{ url_for('audit.index') }}" class="{{ 'active' if section == 'audit' }}">{{ icon("clock") }} Журнал действий</a>
+      <a href="{{ url_for('maintenance.index') }}" class="{{ 'active' if section == 'maintenance' }}">{{ icon("db") }} Резервные копии</a>
+    </nav>
+    {% if current_user.is_authenticated %}
+    <div class="side-user">
+      <div class="avatar">{{ current_user.initials }}</div>
+      <div>
+        <div class="name">{{ current_user.full_name }}</div>
+        <div class="role">{{ current_user.role.name }}</div>
+      </div>
+      <form method="post" action="{{ url_for('auth.logout') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="icon-btn" type="submit" title="Выйти" aria-label="Выйти">{{ icon("logout") }}</button>
+      </form>
+    </div>
+    {% endif %}
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <div class="crumbs">{% block crumbs %}Панель администратора{% endblock %}</div>
+        <h1>{% block heading %}{% endblock %}</h1>
+      </div>
+      <div class="topbar-actions">{% block actions %}{% endblock %}</div>
+    </header>
+    <div class="content">
+      {% include "partials/flashes.html" %}
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+
+<dialog class="confirm" id="confirm-dialog">
+  <form method="dialog">
+    <div class="dlg-body">
+      <h2>Подтвердите действие</h2>
+      <p data-confirm-text></p>
+    </div>
+    <div class="dlg-actions">
+      <button class="btn" value="cancel">Отмена</button>
+      <button class="btn btn-primary" value="ok">Подтвердить</button>
+    </div>
+  </form>
+</dialog>
+{% endblock %}
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

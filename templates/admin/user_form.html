@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, field %}
+{% set section = "users" %}
+{% block title %}{{ "Редактирование пользователя" if user else "Новый пользователь" }}{% endblock %}
+{% block crumbs %}<a href="{{ url_for('users.list_users') }}">Пользователи</a> / {{ user.login if user else "новый" }}{% endblock %}
+{% block heading %}{{ user.full_name if user else "Новый пользователь" }}{% endblock %}
+
+{% block content %}
+<form method="post" class="card" novalidate style="max-width: 860px">
+  {{ form.hidden_tag() }}
+  <div class="card-head"><h2>Учётная запись</h2>{% if user %}<span class="muted">создана {{ user.created_at|dt }}</span>{% endif %}</div>
+  <div class="card-body">
+    <div class="form-grid">
+      {{ field(form.full_name, "full") }}
+      {{ field(form.login, hint="Латиница, цифры, точка, дефис") }}
+      {{ field(form.email) }}
+      {{ field(form.position) }}
+      {{ field(form.role_id, hint="Доступ к панели есть только у роли «Администратор»") }}
+      {{ field(form.password, hint="Оставьте пустым, чтобы не менять" if user else "Не менее 8 символов, буквы и цифры") }}
+      {{ field(form.password_confirm) }}
+      <label class="check full">{{ form.is_active() }} {{ form.is_active.label.text }}</label>
+    </div>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{{ icon("check") }} Сохранить</button>
+    <a class="btn" href="{{ url_for('users.list_users') }}">Отмена</a>
+  </div>
+</form>
+{% endblock %}

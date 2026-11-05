@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, pager, delete_button %}
+{% set section = "users" %}
+{% block title %}Пользователи{% endblock %}
+{% block crumbs %}Настройка{% endblock %}
+{% block heading %}Пользователи и роли{% endblock %}
+{% block actions %}
+  <a class="btn btn-primary" href="{{ url_for('users.create_user') }}">{{ icon("plus") }} Добавить пользователя</a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <form class="filters" method="get" data-autosubmit>
+    <div class="field">
+      <label for="q">Поиск</label>
+      <input id="q" class="input input-search" type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Логин, ФИО или email">
+    </div>
+    <div class="field">
+      <label for="role">Роль</label>
+      <select id="role" name="role" class="select">
+        <option value="">Все роли</option>
+        {% for r in roles %}<option value="{{ r.id }}" {{ 'selected' if request.args.get('role') == r.id|string }}>{{ r.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="status">Состояние</label>
+      <select id="status" name="status" class="select">
+        <option value="">Все</option>
+        <option value="active" {{ 'selected' if request.args.get('status') == 'active' }}>Активные</option>
+        <option value="blocked" {{ 'selected' if request.args.get('status') == 'blocked' }}>Заблокированные</option>
+      </select>
+    </div>
+    <button class="btn" type="submit">Найти</button>
+    {% if args %}<a class="btn" href="{{ url_for('users.list_users') }}">Сбросить</a>{% endif %}
+  </form>
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr><th>Пользователь</th><th>Логин</th><th>Должность</th><th>Роль</th><th>Состояние</th><th>Последний вход</th><th></th></tr>
+      </thead>
+      <tbody>
+      {% for u in users %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="avatar" style="background:#e8edf4;color:#3b4658">{{ u.initials }}</div>
+              <div><div>{{ u.full_name }}</div><div class="sub">{{ u.email }}</div></div>
+            </div>
+          </td>
+          <td class="mono">{{ u.login }}</td>
+          <td>{{ u.position or "—" }}</td>
+          <td>{{ u.role.name }}</td>
+          <td>
+            {% if u.is_active %}<span class="badge b-verified"><span class="dot"></span>Активен</span>
+            {% else %}<span class="badge b-rejected"><span class="dot"></span>Заблокирован</span>{% endif %}
+          </td>
+          <td class="nowrap">{{ u.last_login_at|dt }}</td>
+          <td class="actions">
+            <div class="row-actions">
+              <a class="btn btn-icon" href="{{ url_for('users.edit_user', user_id=u.id) }}" title="Изменить" aria-label="Изменить">{{ icon("edit") }}</a>
+              {% if u.id != current_user.id %}
+                {{ delete_button(url_for('users.delete_user', user_id=u.id), delete_form,
+                   "Удалить пользователя «" ~ u.full_name ~ "»? Действие нельзя отменить.") }}
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7"><div class="empty"><strong>Ничего не найдено</strong>Измените условия поиска</div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pager(pagination, "users.list_users", args) }}
+</div>
+{% endblock %}
